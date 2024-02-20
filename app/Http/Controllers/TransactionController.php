@@ -36,8 +36,25 @@ class TransactionController extends Controller
         }
 
         // Consulta o serviço autorizador externo
+        try {
+            $response = Http::get('https://run.mocky.io/v3/5794d450-d2e2-4412-8131-73d0293ac1cc');
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Ocorreu um erro ao consultar o serviço autorizador externo.'], 500);
+        }
+
         // Verifica se a consulta foi bem-sucedida
+        if ($response->status() != 200) {
+            // Retorna uma mensagem de erro
+            return response()->json(['error' => 'Ocorreu um erro ao consultar o serviço autorizador externo.'], 500);
+        }
+
         // Verifica se a transferência foi autorizada
+        $authorization = $response->json();
+        if ($authorization['message'] != 'Autorizado') {
+            // Retorna uma mensagem de erro
+            return response()->json(['error' => 'A transferência não foi autorizada pelo serviço autorizador externo.'], 403);
+        }
+
             // Realiza a transferência de dinheiro
             $transaction = Transaction::create([
                 'payer' => $payer->id,
