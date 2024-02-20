@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendNotificationJob;
 use App\Models\Transaction;
+use App\Models\User;
+use DB;
 use Illuminate\Http\Request;
+use Http;
 
 class TransactionController extends Controller
 {
@@ -55,6 +59,10 @@ class TransactionController extends Controller
             return response()->json(['error' => 'A transferência não foi autorizada pelo serviço autorizador externo.'], 403);
         }
 
+        try {
+            //inicia a transação
+            DB::beginTransaction();
+
             // Realiza a transferência de dinheiro
             $transaction = Transaction::create([
                 'payer' => $payer->id,
@@ -63,6 +71,20 @@ class TransactionController extends Controller
                 'type' => $request->type,
                 'description' => $request->description,
             ]);
+
+            // Atualiza os saldos dos usuários envolvidos na transferência
+            $payer->decrement('balance', $request->value);
+            $payee->increment('balance', $request->value);
+
+            // salva as alterações no banco de dados
+            DB::commit();
+
             return response()->json($transaction, 201);
+        } catch (\Exception $e) {
+            // Se ocorrer um erro, desfaz as atualizações
+            DB::rollBack();
+
+            return response()->json(['error' => 'Ocorreu um erro ao processar a transação.'], 500);
+        }
     }
 }
