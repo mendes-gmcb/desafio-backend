@@ -25,6 +25,9 @@ class RegisteredUserController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
+                'cpf_cnpj' => ['required', 'string', 'lowercase', 'cpf_ou_cnpj', 'formato_cpf_ou_cnpj', 'unique:'.User::class],
+                'balance' => ['required', 'int'],
+                'limit' => ['required', 'int']
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             // return response()->json($e->errors(), 400);
@@ -35,6 +38,9 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'cpf_cnpj' => $request->cpf_cnpj,
+            'balance' => $request->balance,
+            'limit' => $request->limit
         ]);
 
         event(new Registered($user));

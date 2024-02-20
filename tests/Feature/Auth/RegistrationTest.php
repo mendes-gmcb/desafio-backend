@@ -15,8 +15,11 @@ class RegistrationTest extends TestCase
         $response = $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'cpf_cnpj' => Generator::cpf(true),
             'password' => 'password',
             'password_confirmation' => 'password',
+            'balance' => 0,
+            'limit' => 100000,
         ]);
 
         $this->assertAuthenticated();
