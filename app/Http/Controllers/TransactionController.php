@@ -24,6 +24,11 @@ class TransactionController extends Controller
         // return response()->json([$payer, $payee]);
 
         // Verifica se o usuário que está enviando a transferência é um usuário comum
+        if ($payer->type === 'store') {
+            // Lança uma exceção ou retorna uma mensagem de erro
+            return response()->json(['error' => 'Lojistas não podem enviar dinheiro para outros usuários.'], 403);
+        }
+
         // Verifica se o usuário que está enviando a transferência tem saldo suficiente
         // Consulta o serviço autorizador externo
         // Verifica se a consulta foi bem-sucedida
