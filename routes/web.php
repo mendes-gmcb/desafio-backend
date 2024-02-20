@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\TransactionController;
+use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,5 +19,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return ['Laravel' => app()->version(), 'Container' => getenv('HOSTNAME')];
 });
+
+Route::get('/users', function() {
+    return User::all();
+});
+
+Route::get('/transactions', function() {
+    return Transaction::with("user")->all();
+});
+
+Route::post('/transactions', [TransactionController::class, 'transactMoney'])->name('transacitons.store');
 
 require __DIR__.'/auth.php';
