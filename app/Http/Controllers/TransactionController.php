@@ -79,6 +79,9 @@ class TransactionController extends Controller
             // salva as alterações no banco de dados
             DB::commit();
 
+            SendNotificationJob::dispatch($payee, $transaction);
+            // $payee->notify((new PaymentReceived($transaction))->delay(now()->addMinutes(1)));
+
             return response()->json($transaction, 201);
         } catch (\Exception $e) {
             // Se ocorrer um erro, desfaz as atualizações

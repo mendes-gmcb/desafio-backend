@@ -73,6 +73,17 @@ services:
                     cpus: "0.4"
                     memory: "300MB"
 
+    # queue
+    queue:
+        <<: *backend 
+        command: "php artisan queue:work"
+        depends_on:
+            - redis
+            - app1
+            - app2
+        hostname: queue
+        container_name: queue
+
     # redis
     redis:
         image: redis:latest
