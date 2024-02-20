@@ -45,4 +45,55 @@ class TransactionTest extends TestCase
         ]);
     }
 
+    /** @test */
+    public function store_cannot_send_money()
+    {
+        // Cria um lojista e um usuário comum
+        $store = User::factory()->create([
+            'type' => 'store',
+            'balance' => 100
+        ]);
+        $user = User::factory()->create([
+            'type' => 'user',
+            'balance' => 0
+        ]);
+
+        // Tenta realizar uma transferência de dinheiro do lojista para o usuário comum
+        $response = $this->actingAs($store)->postJson('/transactions', [
+            'payer' => $store->id,
+            'payee' => $user->id,
+            'value' => 50,
+            'type' => 'd',
+            'description' => 'Transferência de dinheiro para usuário comum',
+        ]);
+
+        // Verifica se a transferência foi rejeitada com uma mensagem de erro
+        $response->assertStatus(403);
+        $response->assertJson(['error' => 'Lojistas não podem enviar dinheiro para outros usuários.']);
+
+        // Verifica se a transferência não foi criada no banco de dados
+        $this->assertDatabaseMissing('transactions', [
+            'payer' => $store->id,
+            'payee' => $user->id,
+            'value' => 50,
+            'type' => 'd',
+            'description' => 'Transferência de dinheiro para usuário comum',
+        ]);
+
+        // print_r($store);
+        // Verifica se os saldos dos usuários não foram atualizados
+        $this->assertDatabaseHas('users', [
+            'id' => $store->id,
+            'balance' => $store->fresh()->balance,
+        ]);
+
+        // print_r($store);
+        // print_r($user);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'balance' => $user->fresh()->balance,
+        ]);
+        // print_r($user);
+    }
 }
