@@ -30,6 +30,11 @@ class TransactionController extends Controller
         }
 
         // Verifica se o usuário que está enviando a transferência tem saldo suficiente
+        if ($payer->balance < $request->value) {
+            // Retorna uma mensagem de erro
+            return response()->json(['error' => 'Você não tem saldo suficiente para realizar essa transferência.'], 400);
+        }
+
         // Consulta o serviço autorizador externo
         // Verifica se a consulta foi bem-sucedida
         // Verifica se a transferência foi autorizada
