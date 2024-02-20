@@ -130,4 +130,54 @@ class TransactionTest extends TestCase
             'balance' => $payer->fresh()->balance,
         ]);
     }
+
+    /** @test */
+    public function transaction_must_be_authorized_by_external_service()
+    {
+        // Cria dois usuários
+        $payer = User::factory()->create(['balance' => 100]);
+        $payee = User::factory()->create(['balance' => 0]);
+
+        $transaction = [
+            'payer' => $payer->id,
+            'payee' => $payee->id,
+            'value' => 50,
+            'type' => 'd',
+            'description' => 'Transferência de dinheiro para outro usuário',
+        ];
+
+        // Simula o serviço autorizador externo
+        Http::fake([
+            'https://run.mocky.io/v3/5794d450-d2e2-4412-8131-73d0293ac1cc' => Http::response([
+                'message' => 'Autorizado',
+            ], 200),
+        ]);
+
+        // Realiza a transferência de dinheiro
+        $response = $this->actingAs($payer)->postJson('/transactions', $transaction);
+
+        // Verifica se a transferência foi realizada com sucesso
+        $response->assertStatus(201);
+        $response->assertJson($transaction);
+
+        // Verifica se a transferência foi criada no banco de dados
+        $this->assertDatabaseHas('transactions', [
+            'payer' => $payer->id,
+            'payee' => $payee->id,
+            'value' => 50,
+            'type' => 'd',
+            'description' => 'Transferência de dinheiro para outro usuário',
+        ]);
+
+        // Verifica se os saldos dos usuários foram atualizados
+        $this->assertDatabaseHas('users', [
+            'id' => $payer->id,
+            'balance' => 50,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'id' => $payee->id,
+            'balance' => 50,
+        ]);
+    }
 }
