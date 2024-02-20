@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+    # image project
+    app1: &backend
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis
+            - db
+        networks:
+            - laravel
+        container_name: app1
+        hostname: app1
+        deploy:
+            resources:
+                limits:
+                    cpus: "0.3"
+                    memory: "130MB"
+
+    app2: 
+        <<: *backend 
+        hostname: app2
+        container_name: app2
+
+    # nginx
+    nginx:
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - "8080:8080"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/:/etc/nginx/
+        networks:
+            - laravel
+        container_name: nginx
+        depends_on:
+            - app1
+            - app2
+        # entrypoint: ["sleep", "infinity"]
+        deploy:
+            resources:
+                limits:
+                    cpus: "0.2"
+                    memory: "20MB"
+
+    # db mysql
+    db:
+        image: mysql:8.3.0
+        platform: linux/x86_64
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: desafio
+            MYSQL_ROOT_PASSWORD: desafio
+            MYSQL_PASSWORD: desafio
+            MYSQL_USER: desafio
+        volumes:
+            - ./.docker/mysql/dbdata:/var/lib/mysql
+        ports:
+            - "3388:3306"
+        networks:
+            - laravel
+        container_name: db
+        deploy:
+            resources:
+                limits:
+                    cpus: "0.4"
+                    memory: "300MB"
+
+    # redis
+    redis:
+        image: redis:latest
+        networks:
+            - laravel
+        hostname: redis
+        container_name: redis
+        deploy:
+            resources:
+                limits:
+                    cpus: "0.2"
+                    memory: "100MB"
+networks:
+    laravel:
+        driver: bridge
