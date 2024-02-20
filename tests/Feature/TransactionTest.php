@@ -96,4 +96,38 @@ class TransactionTest extends TestCase
         ]);
         // print_r($user);
     }
+
+    /** @test */
+    public function user_must_have_enough_balance_before_transfer()
+    {
+        // Cria um usuário comum com um saldo de 50
+        $payer = User::factory()->create(['balance' => 50]);
+        $payee = User::factory()->create(['balance' => 0]);
+
+        // Tenta realizar uma transferência de dinheiro do usuário comum para outro usuário comum por um valor de 51
+        $response = $this->actingAs($payer)->postJson('/transactions', [
+            'payer' => $payer->id,
+            'payee' => $payee->id,
+            'value' => 51,
+            'type' => 'd',
+            'description' => 'Transferência de dinheiro para outro usuário comum',
+        ]);
+
+        // Verifica se a transferência foi rejeitada com uma mensagem de erro
+        $response->assertStatus(400);
+        $response->assertJson(['error' => 'Você não tem saldo suficiente para realizar essa transferência.']);
+
+        // Verifica se a transferência não foi criada no banco de dados
+        $this->assertDatabaseMissing('transactions', [
+            'payer' => $payer->id,
+            'value' => 51,
+            'type' => 'd',
+        ]);
+
+        // Verifica se o saldo do usuário não foi atualizado
+        $this->assertDatabaseHas('users', [
+            'id' => $payer->id,
+            'balance' => $payer->fresh()->balance,
+        ]);
+    }
 }
