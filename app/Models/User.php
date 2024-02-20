@@ -20,11 +20,19 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
+        'id',
+        'type',
         'name',
         'email',
+        'cpf_cnpj',
         'password',
         'email_verified_at',
         'remember_token',
+        'balance',
+        'limit',
+        'created_at',
+        'updated_at',
+        'deleted_at'
     ];
 
     /**
@@ -47,4 +55,9 @@ class User extends Authenticatable
         'password' => 'hashed',
         'remember_token' => 'string',
     ];
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
 }
