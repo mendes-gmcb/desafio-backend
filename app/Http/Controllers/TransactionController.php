@@ -15,18 +15,26 @@ class TransactionController extends Controller
     {
         // Valida os dados da requisição
         $request->validate([
-            'payer' => ['required', 'uuid', 'exists:users,id'],
-            'payee' => ['required', 'uuid', 'exists:users,id'],
+            'payer' => ['required', 'uuid'],
+            'payee' => ['required', 'uuid'],
             'value' => ['required', 'int', 'min:1'],
-            'type' => ['required', 'in:c,d,p'],
+            'type' => ['required', 'in:"c","d","p"'],
             'description' => ['required', 'string', 'max:255'],
         ]);
-        // return response(200);
+        // return response()->json($request);
 
-        $payer = User::where('id', $request->payer)->firstOrFail();
-        $payee = User::where('id', $request->payee)->firstOrFail();
+        $payer = User::where('id', $request->payer)->first();
+        $payee = User::where('id', $request->payee)->first();
+
+        if (is_null($payer)) {
+            return response()->json(['error' => 'Pagador não encontrado!'], 404);
+        }
+
+        if (is_null($payee)) {
+            return response()->json(['error' => 'Beneficiario não encontrado!'], 404);
+        }
+        
         // return response()->json([$payer, $payee]);
-
         // Verifica se o usuário que está enviando a transferência é um usuário comum
         if ($payer->type === 'store') {
             // Lança uma exceção ou retorna uma mensagem de erro
