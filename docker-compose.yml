@@ -21,7 +21,7 @@ services:
             resources:
                 limits:
                     cpus: "0.3"
-                    memory: "130MB"
+                    memory: "230MB"
 
     app2: 
         <<: *backend 
@@ -33,12 +33,12 @@ services:
         image: nginx:alpine
         restart: unless-stopped
         ports:
-            - "8080:8080"
+            - "9999:9999"
         volumes:
-            - ./:/var/www
-            - ./docker/nginx/:/etc/nginx/
+            - ./docker/load-balancer/nginx.conf:/etc/nginx/nginx.conf:ro
         networks:
             - laravel
+        # entrypoint: [ "sleep", "infinity" ]
         container_name: nginx
         depends_on:
             - app1
@@ -47,8 +47,8 @@ services:
         deploy:
             resources:
                 limits:
-                    cpus: "0.2"
-                    memory: "20MB"
+                    cpus: "0.17"
+                    memory: "10MB"
 
     # db mysql
     db:
