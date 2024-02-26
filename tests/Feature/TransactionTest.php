@@ -26,6 +26,13 @@ class TransactionTest extends TestCase
             'description' => 'Transferência de dinheiro para usuário comum',
         ];
 
+        // Simula o serviço autorizador externo
+        Http::fake([
+            'run.mocky.io/*' => Http::response([
+                'message' => 'Autorizado',
+            ], 200),
+        ]);
+
         // Tenta realizar uma transferência
         $response = $this->actingAs($payer)->postJson('/transactions', $transaction);
 
@@ -58,14 +65,23 @@ class TransactionTest extends TestCase
             'balance' => 0
         ]);
 
-        // Tenta realizar uma transferência de dinheiro do lojista para o usuário comum
-        $response = $this->actingAs($store)->postJson('/transactions', [
+        $transaction = [
             'payer' => $store->id,
             'payee' => $user->id,
             'value' => 50,
             'type' => 'd',
             'description' => 'Transferência de dinheiro para usuário comum',
+        ];
+
+        // Simula o serviço autorizador externo
+        Http::fake([
+            'run.mocky.io/*' => Http::response([
+                'message' => 'Autorizado',
+            ], 200),
         ]);
+
+        // Tenta realizar uma transferência de dinheiro do lojista para o usuário comum
+        $response = $this->actingAs($store)->postJson('/transactions', $transaction);
 
         // Verifica se a transferência foi rejeitada com uma mensagem de erro
         $response->assertStatus(403);
@@ -104,14 +120,23 @@ class TransactionTest extends TestCase
         $payer = User::factory()->create(['balance' => 50]);
         $payee = User::factory()->create(['balance' => 0]);
 
-        // Tenta realizar uma transferência de dinheiro do usuário comum para outro usuário comum por um valor de 51
-        $response = $this->actingAs($payer)->postJson('/transactions', [
+        $transaction = [
             'payer' => $payer->id,
             'payee' => $payee->id,
             'value' => 51,
             'type' => 'd',
             'description' => 'Transferência de dinheiro para outro usuário comum',
+        ];
+
+        // Simula o serviço autorizador externo
+        Http::fake([
+            'run.mocky.io/*' => Http::response([
+                'message' => 'Autorizado',
+            ], 200),
         ]);
+
+        // Tenta realizar uma transferência de dinheiro do usuário comum para outro usuário comum por um valor de 51
+        $response = $this->actingAs($payer)->postJson('/transactions', $transaction);
 
         // Verifica se a transferência foi rejeitada com uma mensagem de erro
         $response->assertStatus(400);
@@ -148,7 +173,7 @@ class TransactionTest extends TestCase
 
         // Simula o serviço autorizador externo
         Http::fake([
-            'https://run.mocky.io/v3/5794d450-d2e2-4412-8131-73d0293ac1cc' => Http::response([
+            'run.mocky.io/*' => Http::response([
                 'message' => 'Autorizado',
             ], 200),
         ]);
@@ -178,6 +203,49 @@ class TransactionTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $payee->id,
             'balance' => 50,
+        ]);
+    }
+
+    /** @test */
+    public function transaction_is_not_authorized_by_external_service()
+    {
+        // Cria dois usuários
+        $payer = User::factory()->create(['balance' => 100]);
+        $payee = User::factory()->create(['balance' => 0]);
+
+        $transaction = [
+            'payer' => $payer->id,
+            'payee' => $payee->id,
+            'value' => 50,
+            'type' => 'd',
+            'description' => 'Transferência de dinheiro para outro usuário',
+        ];
+
+        // Simula o serviço autorizador externo
+        Http::fake([
+            'run.mocky.io/*' => Http::response([
+                'message' => 'Nao Autorizado',
+            ], 200),
+        ]);
+
+        // Realiza a transferência de dinheiro
+        $response = $this->actingAs($payer)->postJson('/transactions', $transaction);
+
+        // Verifica se a transferência foi realizada com sucesso
+        $response->assertStatus(403);
+        $response->assertJson(['error' => 'A transferência não foi autorizada pelo serviço autorizador externo.']);
+
+        // Verifica se a transferência não foi criada no banco de dados
+        $this->assertDatabaseMissing('transactions', [
+            'id' => $payer->id,
+            'value' => 51,
+            'type' => 'd',
+        ]);
+
+        // Verifica se o saldo do usuário não foi atualizado
+        $this->assertDatabaseHas('users', [
+            'id' => $payer->id,
+            'balance' => $payer->fresh()->balance,
         ]);
     }
 }
