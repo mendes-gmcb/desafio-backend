@@ -25,9 +25,9 @@ Route::get('/users', function() {
 });
 
 Route::get('/transactions', function() {
-    return Transaction::with("user")->all();
+    return Transaction::all();
 });
 
-Route::post('/transactions', [TransactionController::class, 'transactMoney'])->name('transacitons.store');
+Route::post('/transactions', [TransactionController::class, 'transactMoneyRefactored'])->name('transacitons.store');
 
 require __DIR__.'/auth.php';
