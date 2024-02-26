@@ -28,6 +28,6 @@ Route::get('/transactions', function() {
     return Transaction::all();
 });
 
-Route::post('/transactions', [TransactionController::class, 'transactMoneyRefactored'])->name('transacitons.store');
+Route::post('/transactions', [TransactionController::class, 'transactMoney'])->name('transacitons.store');
 
 require __DIR__.'/auth.php';
