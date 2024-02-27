@@ -8,8 +8,6 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Services\TransactionAuthorizationService;
 use DB;
-use Illuminate\Http\Request;
-use Http;
 
 enum Type: string {
     case Debit = "d";
