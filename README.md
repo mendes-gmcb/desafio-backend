@@ -68,4 +68,4 @@ This api is a backend to execute bank transactions
 
 This will start the application, Redis server, and Nginx load balancer.
 
-Acesse o projeto http://localhost:8080
+Acesse o projeto http://localhost:9999
